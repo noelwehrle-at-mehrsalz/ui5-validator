@@ -237,6 +237,9 @@ sap.ui.define(
     Validator.prototype._addMessage = function(oControl, sMessage) {
       var sLabel,
         eMessageType = MessageType.Error;
+      var sControlId = oControl.getId(); // Get the control ID
+      var sBindingProperty = this._getRelevantBindingProperty(oControl); // Get the relevant property for the target
+      var oMessageProcessor = new sap.ui.core.message.ControlMessageProcessor();
 
       if (sMessage === undefined) sMessage = "Wrong input"; // Default message
 
@@ -265,7 +268,9 @@ sap.ui.define(
               ? oControl.getValueStateText()
               : sMessage, // Get Message from ValueStateText if available
             type: eMessageType,
-            additionalText: sLabel // Get label from the form element
+            additionalText: sLabel, // Get label from the form element
+            target: sControlId + "/" + sBindingProperty, // Set the target as control ID and property
+            processor: oMessageProcessor
           })
         );
     };
@@ -366,6 +371,27 @@ sap.ui.define(
       }
       return eMessageType;
     };
+
+    /**
+     * Retrieves the relevant binding property of the control.
+     * This is used to identify which property of the control is involved in the validation.
+     * 
+     * @memberof nl.qualiture.plunk.demo.utils.Validator
+     * @param {sap.ui.core.Control|sap.ui.layout.form.FormContainer|sap.ui.layout.form.FormElement} oControl - The control to get the binding property from.
+     * @returns {string|null} The binding property name if available, otherwise null.
+     */
+    Validator.prototype._getRelevantBindingProperty = function(oControl) {
+      var sProperty = null;
+      this._aValidateProperties.some(function(sProp) {
+        if (oControl.getBinding(sProp)) {
+          sProperty = sProp;
+          return true;
+        }
+        return false;
+      });
+      return sProperty;
+    };
+
 
     return Validator;
   }
