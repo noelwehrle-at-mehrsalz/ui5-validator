@@ -33,6 +33,7 @@ sap.ui.define(
         "_page"
       ];
       this._aValidateProperties = ["value", "selectedKey", "text"]; // yes, I want to validate Select and Text controls too
+      this._validationMessages = []; // Initialize an array to keep track of validation messages
     };
 
     /**
@@ -54,10 +55,11 @@ sap.ui.define(
      */
     Validator.prototype.validate = function(oControl) {
       this._isValid = true;
-      sap.ui
-        .getCore()
-        .getMessageManager()
-        .removeAllMessages();
+      // Remove only messages that were added during the previous validation cycle
+      if (this._validationMessages.length > 0) {
+        sap.ui.getCore().getMessageManager().removeMessages(this._validationMessages);
+        this._validationMessages = []; // Clear the reference after removing the messages
+      }
       this._validate(oControl);
       return this.isValid();
     };
@@ -259,20 +261,23 @@ sap.ui.define(
           oControl.getValueState()
         );
 
+      var oMessage = new Message({
+        message: oControl.getValueStateText ? oControl.getValueStateText() : sMessage, // Get Message from ValueStateText if available
+        type: eMessageType,
+        additionalText: sLabel, // Get label from the form element
+        target: sControlId + "/" + sBindingProperty, // Set the target as control ID and property
+        processor: oMessageProcessor
+      });
+
       sap.ui
         .getCore()
         .getMessageManager()
         .addMessages(
-          new Message({
-            message: oControl.getValueStateText
-              ? oControl.getValueStateText()
-              : sMessage, // Get Message from ValueStateText if available
-            type: eMessageType,
-            additionalText: sLabel, // Get label from the form element
-            target: sControlId + "/" + sBindingProperty, // Set the target as control ID and property
-            processor: oMessageProcessor
-          })
+          oMessage
         );
+
+        // Keep track of validation messages
+        this._validationMessages.push(oMessage);
     };
 
     /**
