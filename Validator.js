@@ -247,8 +247,10 @@ sap.ui.define(
         case "sap.m.Select":
           sLabel = oControl
             .getParent()
+            .getLabel ? oControl
+            .getParent()
             .getLabel()
-            .getText();
+            .getText() : "No Label Found";
           break;
       }
 
