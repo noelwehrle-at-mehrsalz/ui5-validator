@@ -242,8 +242,10 @@ sap.ui.define(
       var sControlId = oControl.getId(); // Get the control ID
       var sBindingProperty = this._getRelevantBindingProperty(oControl); // Get the relevant property for the target
       var oMessageProcessor = new sap.ui.core.message.ControlMessageProcessor();
+      var sTarget = sControlId + "/" + sBindingProperty;
 
-      if (sMessage === undefined) sMessage = "Wrong input"; // Default message
+      sMessage = oControl.getValueStateText ? oControl.getValueStateText() : sMessage; // Get Message from ValueStateText if available
+      sMessage ??= "Wrong input"; // Default message
 
       switch (oControl.getMetadata().getName()) {
         case "sap.m.CheckBox":
@@ -261,23 +263,35 @@ sap.ui.define(
           oControl.getValueState()
         );
 
-      var oMessage = new Message({
-        message: oControl.getValueStateText ? oControl.getValueStateText() : sMessage, // Get Message from ValueStateText if available
-        type: eMessageType,
-        additionalText: sLabel, // Get label from the form element
-        target: sControlId + "/" + sBindingProperty, // Set the target as control ID and property
-        processor: oMessageProcessor
+      // Get existing messages for the same target
+      var aExistingMessages = sap.ui.getCore().getMessageManager().getMessageModel().getData().filter(function(oMessage) {
+        return oMessage.target === sTarget;
       });
 
-      sap.ui
-        .getCore()
-        .getMessageManager()
-        .addMessages(
-          oMessage
-        );
+      // Check if the message already exists
+      var bMessageExists = aExistingMessages.some(function(oMessage) {
+        return oMessage.message === sMessage && oMessage.type === eMessageType;
+      });
+
+      if (!bMessageExists) {
+        var oMessage = new Message({
+          message: sMessage,
+          type: eMessageType,
+          additionalText: sLabel, // Get label from the form element
+          target: sControlId + "/" + sBindingProperty, // Set the target as control ID and property
+          processor: oMessageProcessor
+        });
+
+        sap.ui
+          .getCore()
+          .getMessageManager()
+          .addMessages(
+            oMessage
+          );
 
         // Keep track of validation messages
         this._validationMessages.push(oMessage);
+      }
     };
 
     /**
