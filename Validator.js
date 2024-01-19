@@ -86,7 +86,7 @@ sap.ui.define(
      */
     Validator.prototype._validate = function(oControl) {
       var i,
-        isValidatedControl = true,
+        isValidatedControl = false,
         isValid = true;
 
       // only validate controls and elements which have a 'visible' property
@@ -103,30 +103,24 @@ sap.ui.define(
         return;
       }
 
-      if (
-        oControl.getRequired &&
-        oControl.getRequired() === true &&
-        oControl.getEnabled &&
-        oControl.getEnabled() === true
-      ) {
+      if (oControl.getRequired && oControl.getRequired() === true && oControl.getEnabled && oControl.getEnabled() === true) {
         // Control required
         isValid = this._validateRequired(oControl);
-      } else if (
-        (i = this._hasType(oControl)) !== -1 &&
-        oControl.getEnabled &&
-        oControl.getEnabled() === true
-      ) {
+        isValidatedControl = true;
+      } 
+
+      if ( isValid && ( (i = this._hasType(oControl)) !== -1 && oControl.getEnabled && oControl.getEnabled() === true ) ) {
         // Control constraints
         isValid = this._validateConstraint(oControl, i);
-      } else if (
-        oControl.getValueState &&
-        oControl.getValueState() === ValueState.Error
-      ) {
+        isValidatedControl = true;
+
+      }
+
+      if ( isValid && ( oControl.getValueState && oControl.getValueState() === ValueState.Error ) ) {
         // Control custom validation
         isValid = false;
         this._setValueState(oControl, ValueState.Error, "Wrong input");
-      } else {
-        isValidatedControl = false;
+        isValidatedControl = true;
       }
 
       if (!isValid) {
